@@ -18,7 +18,7 @@ func TestShuffle(t *testing.T) {
 	params := test.DefaultParams
 	f := func() {
 		arr := test.GenerateArr(params)
-		Shuffle[int](arr)
+		Shuffle(arr)
 		if !verifyUnsorted(arr) {
 			t.Fail()
 		}
