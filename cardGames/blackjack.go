@@ -8,16 +8,6 @@ import (
 	"practice/scan"
 )
 
-type action int
-
-const (
-	invalid action = iota
-	hit
-	stand
-	double
-	split
-)
-
 type Blackjack struct {
 	dealer     *Player
 	players    *collections.LinkedList[*Player]
@@ -109,24 +99,31 @@ func (b Blackjack) handleDealerBlackjack() {
 	}
 }
 
-func (b Blackjack) acceptAction(p Player) action {
+func (b Blackjack) acceptAction(p *Player) action {
 	actions := []string{
-		"1. Hit",
-		"2. Stand",
+		fmt.Sprintf("1. %s", hit.String()),
+		fmt.Sprintf("2. %s", stand.String()),
 	}
+
+	if canDouble(*p, b.bets[p]) {
+		actions = append(actions, fmt.Sprintf("3. %s", double.String()))
+	}
+
 	prompt := fmt.Sprintf("%s\nAction?: ", strings.Join(actions, "\n"))
 	a := scan.ScanInt(prompt, 1, len(actions))
 	return action(a)
 }
 
-func (b Blackjack) handleAction(p Player, a action) {
+func (b Blackjack) handleAction(p *Player, a action) {
 	switch a {
 	case hit:
-		b.deal(p, true)
+		b.deal(*p, true)
 	case stand:
 		break
 	case double:
-		// TODO
+		p.SubtractBalance(b.bets[p])
+		b.bets[p] *= 2
+		b.deal(*p, true)
 	case split:
 		// TODO
 	}
@@ -138,8 +135,9 @@ func (b Blackjack) printHands(players ...Player) {
 	}
 }
 
-func (b Blackjack) playerTurn(p Player) {
-	b.printHands(p, *b.dealer)
+func (b Blackjack) playerTurn(p *Player) {
+	b.printHands(*p, *b.dealer)
+
 	for p.hand.hardScore <= 21 {
 		var a action
 		switch p.playerType {
@@ -148,11 +146,18 @@ func (b Blackjack) playerTurn(p Player) {
 		case PlayerTypeHuman:
 			a = b.acceptAction(p)
 		}
+
 		b.handleAction(p, a)
+
 		if a == stand {
 			break
 		}
-		b.printHands(p, *b.dealer)
+
+		b.printHands(*p, *b.dealer)
+
+		if a == double {
+			break
+		}
 	}
 }
 
@@ -164,7 +169,7 @@ func (b Blackjack) playerTurns() []*Player {
 			b.win(p)
 		}
 
-		b.playerTurn(*p)
+		b.playerTurn(p)
 		if p.hand.hardScore > 21 {
 			b.bust(p)
 		} else {

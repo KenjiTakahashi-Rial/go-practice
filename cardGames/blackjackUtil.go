@@ -8,6 +8,33 @@ import (
 
 const blackjackMaxBalance int = 10000000000
 
+type action int
+
+const (
+	invalid action = iota
+	hit
+	stand
+	double
+	split
+)
+
+func (a action) String() string {
+	switch a {
+	case invalid:
+		return "Invalid"
+	case hit:
+		return "Hit"
+	case stand:
+		return "Stand"
+	case double:
+		return "Double"
+	case split:
+		return "Split"
+	default:
+		return fmt.Sprintf("%d", int(a))
+	}
+}
+
 func scanCPULevel() cpu {
 	cpuLevels := []string{
 		"1. Basic",
@@ -95,6 +122,10 @@ func upCard(h BlackjackHand) Card {
 		}
 	}
 	return Card{}
+}
+
+func canDouble(p Player, bet int) bool {
+	return p.hand.hand.Len() == 2 && p.balance >= bet
 }
 
 func PlayBlackjack() {
