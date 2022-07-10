@@ -8,13 +8,35 @@ import (
 
 const blackjackMaxBalance int = 10000000000
 
+func scanCPULevel() cpu {
+	cpuLevels := []string{
+		"1. Basic",
+		"2. Advanced",
+	}
+	prompt := fmt.Sprintf("%s\nCPU level?: ", strings.Join(cpuLevels, "\n"))
+	switch scan.ScanInt(prompt, 1, len(cpuLevels)) {
+	case 1:
+		return BasicBlackjackCPU{}
+	case 2:
+		return BasicBlackjackCPU{} // TODO: Change this to advanced CPU
+	default:
+		panic("Invalid CPU level")
+	}
+}
+
 func scanPlayer(playerType PlayerType, playerNumber int) *Player {
 	fmt.Printf("%s %d name?: ", playerType, playerNumber)
 	var name string
 	fmt.Scanln(&name)
 	name = strings.TrimSpace(name)
 	balance := scan.ScanInt(fmt.Sprintf("%s starting balance?: ", name), 1, blackjackMaxBalance)
-	return NewPlayer(playerType, name, balance)
+
+	var playerCPU cpu
+	if playerType == PlayerTypeCPU {
+		playerCPU = scanCPULevel()
+	}
+
+	return NewPlayer(playerType, name, balance, playerCPU)
 }
 
 func newBlackjackFromInput() Blackjack {
@@ -41,15 +63,18 @@ func newBlackjackFromInput() Blackjack {
 	return NewBlackjack(players, minBet)
 	}
 
-	cpuCount := scanMinInt("Number of CPU players?: ", 0)
-	cpus := make([]*Player, cpuCount)
-	for i := range cpus {
-		cpus[i] = scanPlayer(CPU, i+1)
+func scoreCardBlackjack(c Card) (int, int) {
+	if isFace(c) {
+		return 10, 10
 	}
 
-	minBet := scanMinInt("Minimum bet?: ", 1)
+	hard := int(c.rank)
+	soft := hard
+	if c.rank == Ace {
+		soft += 10
+	}
 
-	return NewBlackjack(humans, cpus, minBet)
+	return hard, soft
 }
 
 func isBlackjack(h BlackjackHand) bool {
@@ -61,6 +86,15 @@ func finalScore(h BlackjackHand) int {
 		return h.softScore
 	}
 	return h.hardScore
+}
+
+func upCard(h BlackjackHand) Card {
+	for _, c := range h.hand.cards.Slice() {
+		if c.faceUp {
+			return c
+		}
+	}
+	return Card{}
 }
 
 func PlayBlackjack() {

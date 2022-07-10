@@ -11,7 +11,8 @@ import (
 type action int
 
 const (
-	hit action = iota + 1
+	invalid action = iota
+	hit
 	stand
 	double
 	split
@@ -25,14 +26,11 @@ type Blackjack struct {
 	bets    map[*Player]int
 }
 
-func NewBlackjack(humans, cpus []*Player, minBet int) Blackjack {
+func NewBlackjack(players []*Player, minBet int) Blackjack {
 	dealer := NewPlayer(PlayerTypeDealer, PlayerTypeDealer.String(), 0, nil)
 	newPlayers := collections.NewLinkedList[*Player]()
 
-	for _, p := range humans {
-		newPlayers.PushBack(p)
-	}
-	for _, p := range cpus {
+	for _, p := range players {
 		newPlayers.PushBack(p)
 	}
 
@@ -44,6 +42,14 @@ func NewBlackjack(humans, cpus []*Player, minBet int) Blackjack {
 
 func (b Blackjack) acceptBets() {
 	for _, p := range b.players.Slice() {
+		bet := 0
+
+		switch p.playerType {
+		case PlayerTypeCPU:
+			bet = p.playerCPU.Bet(p.balance, b.minBet)
+			fmt.Printf("%s (%d) bets %d.\n", p.name, p.balance, bet)
+			p.SubtractBalance(bet)
+		case PlayerTypeHuman:
 		prompt := fmt.Sprintf("Bet for %s (balance %d) or 0 to quit: ", p.name, p.balance) // TODO: Format numbers over 1000 with commas and add dollar signs
 		for {
 			if bet = scan.ScanInt(prompt, 0, 0); bet == 0 {
@@ -54,10 +60,12 @@ func (b Blackjack) acceptBets() {
 			} else if !p.SubtractBalance(bet) {
 				fmt.Print("Bet exceeds balance. ")
 			} else {
-				b.bets[p] = bet
 				break
 			}
 		}
+	}
+
+		b.bets[p] = bet
 	}
 }
 
@@ -131,7 +139,13 @@ func (b Blackjack) printHands(players ...Player) {
 func (b Blackjack) playerTurn(p Player) {
 	b.printHands(p, *b.dealer)
 	for p.hand.hardScore <= 21 {
-		a := b.acceptAction(p)
+		var a action
+		switch p.playerType {
+		case PlayerTypeCPU:
+			a = p.playerCPU.Turn(*p.hand, upCard(*b.dealer.hand))
+		case PlayerTypeHuman:
+			a = b.acceptAction(p)
+		}
 		b.handleAction(p, a)
 		if a == stand {
 			break
@@ -148,7 +162,7 @@ func (b Blackjack) playerTurns() []*Player {
 			b.win(p)
 		}
 
-		b.playerTurn(*p) // TODO: CPU turns
+		b.playerTurn(*p)
 		if p.hand.hardScore > 21 {
 			b.bust(p)
 		} else {
@@ -228,6 +242,12 @@ func (b Blackjack) checkBalances() {
 			return
 		}
 
+		if p.playerType == PlayerTypeCPU {
+			fmt.Printf("%s is out of money. %s dropped out of the game.\n", p.name, p.name)
+			collections.RemoveFirst(b.players, p)
+			return
+		}
+
 		warning := fmt.Sprintf("Min bet (%d) exceeds %s balance (%d). ", b.minBet, p.name, p.balance)
 		fmt.Print(warning)
 		for {
@@ -253,7 +273,6 @@ func (b Blackjack) checkBalances() {
 func (b Blackjack) round() {
 	fmt.Println("Round start.")
 	defer fmt.Println("Round end.")
-	b.checkBalances()
 	b.acceptBets()
 	b.dealFirstHand()
 
@@ -268,4 +287,6 @@ func (b Blackjack) round() {
 		b.dealerTurn()
 		b.judgeRemaining(remainingPlayers)
 	}
+
+	b.checkBalances()
 }

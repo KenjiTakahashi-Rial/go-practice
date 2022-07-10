@@ -28,10 +28,11 @@ type Player struct {
 	name       string
 	hand       *BlackjackHand
 	balance    int
+	playerCPU  cpu
 }
 
-func NewPlayer(playerType PlayerType, name string, balance int) *Player {
-	return &Player{playerType, name, NewBlackjackHand(), balance}
+func NewPlayer(playerType PlayerType, name string, balance int, playerCPU cpu) *Player {
+	return &Player{playerType, name, NewBlackjackHand(), balance, playerCPU}
 }
 
 func (b *Player) SubtractBalance(amount int) bool {
