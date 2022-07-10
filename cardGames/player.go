@@ -5,18 +5,18 @@ import "fmt"
 type PlayerType int
 
 const (
-	Human PlayerType = iota
-	CPU
-	Dealer
+	PlayerTypeHuman PlayerType = iota
+	PlayerTypeCPU
+	PlayerTypeDealer
 )
 
 func (p PlayerType) String() string {
 	switch p {
-	case Human:
+	case PlayerTypeHuman:
 		return "Human"
-	case CPU:
+	case PlayerTypeCPU:
 		return "CPU"
-	case Dealer:
+	case PlayerTypeDealer:
 		return "Dealer"
 	default:
 		return fmt.Sprintf("%d", int(p))

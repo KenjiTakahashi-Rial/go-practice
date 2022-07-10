@@ -26,7 +26,7 @@ type Blackjack struct {
 }
 
 func NewBlackjack(humans, cpus []*Player, minBet int) Blackjack {
-	dealer := NewPlayer(Dealer, Dealer.String(), 0)
+	dealer := NewPlayer(PlayerTypeDealer, PlayerTypeDealer.String(), 0, nil)
 	newPlayers := collections.NewLinkedList[*Player]()
 
 	for _, p := range humans {
@@ -83,7 +83,7 @@ func (b Blackjack) dealFirstHand() {
 	players := b.players.Slice()
 
 	for _, p := range players {
-		b.deal(*p, p.playerType != Dealer)
+		b.deal(*p, p.playerType != PlayerTypeDealer)
 	}
 	b.deal(*b.dealer, true)
 
