@@ -19,11 +19,12 @@ const (
 )
 
 type Blackjack struct {
-	dealer  *Player
-	players *collections.LinkedList[*Player]
-	deck    *Deck
-	minBet  int
-	bets    map[*Player]int
+	dealer     *Player
+	players    *collections.LinkedList[*Player]
+	deck       *Deck
+	minBet     int
+	bets       map[*Player]int
+	roundCount *int
 }
 
 func NewBlackjack(players []*Player, minBet int) Blackjack {
@@ -37,7 +38,8 @@ func NewBlackjack(players []*Player, minBet int) Blackjack {
 	deck := NewDeck()
 	deck.Shuffle()
 	bets := make(map[*Player]int, newPlayers.Len())
-	return Blackjack{dealer, newPlayers, deck, minBet, bets}
+	roundCount := 0
+	return Blackjack{dealer, newPlayers, deck, minBet, bets, &roundCount}
 }
 
 func (b Blackjack) acceptBets() {
@@ -50,20 +52,20 @@ func (b Blackjack) acceptBets() {
 			fmt.Printf("%s (%d) bets %d.\n", p.name, p.balance, bet)
 			p.SubtractBalance(bet)
 		case PlayerTypeHuman:
-		prompt := fmt.Sprintf("Bet for %s (balance %d) or 0 to quit: ", p.name, p.balance) // TODO: Format numbers over 1000 with commas and add dollar signs
-		for {
-			if bet = scan.ScanInt(prompt, 0, 0); bet == 0 {
-				collections.RemoveFirst(b.players, p)
-				break
-			} else if bet < b.minBet {
-				fmt.Printf("Minimum bet is %d. ", b.minBet)
-			} else if !p.SubtractBalance(bet) {
-				fmt.Print("Bet exceeds balance. ")
-			} else {
-				break
+			prompt := fmt.Sprintf("Bet for %s (balance %d) or 0 to quit: ", p.name, p.balance) // TODO: Format numbers over 1000 with commas and add dollar signs
+			for {
+				if bet = scan.ScanInt(prompt, 0, 0); bet == 0 {
+					collections.RemoveFirst(b.players, p)
+					break
+				} else if bet < b.minBet {
+					fmt.Printf("Minimum bet is %d. ", b.minBet)
+				} else if !p.SubtractBalance(bet) {
+					fmt.Print("Bet exceeds balance. ")
+				} else {
+					break
+				}
 			}
 		}
-	}
 
 		b.bets[p] = bet
 	}
@@ -114,7 +116,7 @@ func (b Blackjack) acceptAction(p Player) action {
 	}
 	prompt := fmt.Sprintf("%s\nAction?: ", strings.Join(actions, "\n"))
 	a := scan.ScanInt(prompt, 1, len(actions))
-			return action(a)
+	return action(a)
 }
 
 func (b Blackjack) handleAction(p Player, a action) {
@@ -271,8 +273,9 @@ func (b Blackjack) checkBalances() {
 }
 
 func (b Blackjack) round() {
-	fmt.Println("Round start.")
-	defer fmt.Println("Round end.")
+	*(b.roundCount) = *(b.roundCount) + 1
+	fmt.Printf("Round %d start.\n", *(b.roundCount))
+	defer fmt.Printf("Round %d end.\n", *(b.roundCount))
 	b.acceptBets()
 	b.dealFirstHand()
 
@@ -289,4 +292,14 @@ func (b Blackjack) round() {
 	}
 
 	b.checkBalances()
+}
+
+func (b Blackjack) Play() {
+	for b.players.Len() > 0 {
+		b.round()
+		for _, p := range b.players.Slice() {
+			p.hand.Reset()
+		}
+		b.dealer.hand.Reset()
+	}
 }

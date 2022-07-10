@@ -61,7 +61,7 @@ func newBlackjackFromInput() Blackjack {
 	minBet := scan.ScanInt("Minimum bet?: ", 1, blackjackMaxBalance)
 
 	return NewBlackjack(players, minBet)
-	}
+}
 
 func scoreCardBlackjack(c Card) (int, int) {
 	if isFace(c) {
@@ -99,11 +99,5 @@ func upCard(h BlackjackHand) Card {
 
 func PlayBlackjack() {
 	b := newBlackjackFromInput()
-	for b.players.Len() > 0 {
-		b.round()
-		for _, p := range b.players.Slice() {
-			p.hand.Reset()
-		}
-		b.dealer.hand.Reset()
-	}
+	b.Play()
 }
