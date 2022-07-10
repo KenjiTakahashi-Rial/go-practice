@@ -2,38 +2,43 @@ package cardGames
 
 import (
 	"fmt"
-	"strconv"
+	"practice/scan"
 	"strings"
 )
 
-func scanMinInt(prompt string, min int) int {
-	for {
-		fmt.Print(prompt)
-		var response string
-		fmt.Scanln(&response)
-		toInt, err := strconv.Atoi(response)
-
-		if err == nil && toInt >= min {
-			return toInt
-		}
-		fmt.Print("Invalid number. ")
-	}
-}
+const blackjackMaxBalance int = 10000000000
 
 func scanPlayer(playerType PlayerType, playerNumber int) *Player {
 	fmt.Printf("%s %d name?: ", playerType, playerNumber)
 	var name string
 	fmt.Scanln(&name)
 	name = strings.TrimSpace(name)
-	balance := scanMinInt(fmt.Sprintf("%s starting balance?: ", name), 1)
+	balance := scan.ScanInt(fmt.Sprintf("%s starting balance?: ", name), 1, blackjackMaxBalance)
 	return NewPlayer(playerType, name, balance)
 }
 
 func newBlackjackFromInput() Blackjack {
-	humanCount := scanMinInt("Number of human players?: ", 1)
-	humans := make([]*Player, humanCount)
-	for i := range humans {
-		humans[i] = scanPlayer(Human, i+1)
+	players := make([]*Player, 0)
+
+	for len(players) == 0 {
+		humans := scan.ScanInt("Number of human players?: ", 0, 3)
+		for i := 0; i < humans; i++ {
+			players = append(players, scanPlayer(PlayerTypeHuman, i+1))
+		}
+
+		cpus := scan.ScanInt("Number of CPU players?: ", 0, 3)
+		for i := 0; i < cpus; i++ {
+			players = append(players, scanPlayer(PlayerTypeCPU, i+1))
+		}
+
+		if len(players) == 0 {
+			fmt.Println("Must have at least 1 player.")
+		}
+	}
+
+	minBet := scan.ScanInt("Minimum bet?: ", 1, blackjackMaxBalance)
+
+	return NewBlackjack(players, minBet)
 	}
 
 	cpuCount := scanMinInt("Number of CPU players?: ", 0)

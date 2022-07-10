@@ -2,10 +2,10 @@ package cardGames
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"practice/collections"
+	"practice/scan"
 )
 
 type action int
@@ -44,15 +44,9 @@ func NewBlackjack(humans, cpus []*Player, minBet int) Blackjack {
 
 func (b Blackjack) acceptBets() {
 	for _, p := range b.players.Slice() {
+		prompt := fmt.Sprintf("Bet for %s (balance %d) or 0 to quit: ", p.name, p.balance) // TODO: Format numbers over 1000 with commas and add dollar signs
 		for {
-			fmt.Printf("Bet for %s (balance %d) or 0 to quit: ", p.name, p.balance) // TODO: Format numbers over 1000 with commas and add dollar signs
-			var response string
-			fmt.Scanln(&response)
-			bet, err := strconv.Atoi(response)
-
-			if err != nil {
-				fmt.Print("Invalid bet. ")
-			} else if bet == 0 {
+			if bet = scan.ScanInt(prompt, 0, 0); bet == 0 {
 				collections.RemoveFirst(b.players, p)
 				break
 			} else if bet < b.minBet {
@@ -106,26 +100,13 @@ func (b Blackjack) handleDealerBlackjack() {
 }
 
 func (b Blackjack) acceptAction(p Player) action {
-	actionStrs := []string{
+	actions := []string{
 		"1. Hit",
 		"2. Stand",
 	}
-	prompt := fmt.Sprintf("%s\nAction?: ", strings.Join(actionStrs, "\n"))
-	fmt.Print(prompt)
-
-	for {
-		var response string
-		fmt.Scanln(&response)
-		a, err := strconv.Atoi(response)
-
-		if err != nil {
-			fmt.Printf("Invalid action. %s", prompt)
-		} else if a < 1 || a > len(actionStrs) {
-			fmt.Printf("Action must be between 1 and %d. %s", len(actionStrs), prompt)
-		} else {
+	prompt := fmt.Sprintf("%s\nAction?: ", strings.Join(actions, "\n"))
+	a := scan.ScanInt(prompt, 1, len(actions))
 			return action(a)
-		}
-	}
 }
 
 func (b Blackjack) handleAction(p Player, a action) {
@@ -250,16 +231,12 @@ func (b Blackjack) checkBalances() {
 		warning := fmt.Sprintf("Min bet (%d) exceeds %s balance (%d). ", b.minBet, p.name, p.balance)
 		fmt.Print(warning)
 		for {
-			fmt.Printf("Enter buy-in amount or 0 to quit: ")
-			var response string
-			fmt.Scan(&response)
-			amount, err := strconv.Atoi(response)
-
-			if err != nil || amount < 0 {
-				fmt.Print("Invalid amount. ")
-			} else if amount == 0 {
+			prompt := "Enter buy-in amount or 0 to quit: "
+			if amount := scan.ScanInt(prompt, 0, 0); amount == 0 {
 				collections.RemoveFirst(b.players, p)
 				break
+			} else if amount < 0 {
+				fmt.Print("Amount must be positive. ")
 			} else {
 				p.AddBalance(amount)
 				if p.balance < b.minBet {
