@@ -105,6 +105,15 @@ func (l *LinkedList[T]) Slice() []T {
 	return slice
 }
 
+func (l *LinkedList[T]) PointerSlice() []*T {
+	slice := make([]*T, l.length)
+	curr := l.head.next
+	for i := 0; curr != l.tail; i, curr = i+1, curr.next {
+		slice[i] = &curr.value
+	}
+	return slice
+}
+
 func RemoveFirst[T comparable](l *LinkedList[T], value T) (T, bool) {
 	curr := l.head.next
 	for curr != l.tail {
