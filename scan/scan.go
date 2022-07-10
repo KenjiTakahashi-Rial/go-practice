@@ -16,7 +16,7 @@ func ScanInt(prompt string, min, max int) int {
 
 		if err != nil {
 			fmt.Printf("Invalid number. %s", prompt)
-		} else if hasRange && n < min || n > max {
+		} else if hasRange && (n < min || n > max) {
 			fmt.Printf("Number must be between %d and %d. %s", min, max, prompt)
 		} else {
 			return n
