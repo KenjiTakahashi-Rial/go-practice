@@ -34,6 +34,12 @@ func (l *LinkedList[T]) Len() int {
 	return l.length
 }
 
+func (l *LinkedList[T]) Reset() {
+	l.head.next = l.tail
+	l.tail.prev = l.head
+	l.length = 0
+}
+
 func (l *LinkedList[T]) Front() (T, bool) {
 	if l.length == 0 {
 		var value T
@@ -95,6 +101,15 @@ func (l *LinkedList[T]) Slice() []T {
 	curr := l.head.next
 	for i := 0; curr != l.tail; i, curr = i+1, curr.next {
 		slice[i] = curr.value
+	}
+	return slice
+}
+
+func (l *LinkedList[T]) PointerSlice() []*T {
+	slice := make([]*T, l.length)
+	curr := l.head.next
+	for i := 0; curr != l.tail; i, curr = i+1, curr.next {
+		slice[i] = &curr.value
 	}
 	return slice
 }
