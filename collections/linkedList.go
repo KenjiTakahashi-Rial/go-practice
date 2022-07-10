@@ -34,6 +34,12 @@ func (l *LinkedList[T]) Len() int {
 	return l.length
 }
 
+func (l *LinkedList[T]) Reset() {
+	l.head.next = l.tail
+	l.tail.prev = l.head
+	l.length = 0
+}
+
 func (l *LinkedList[T]) Front() (T, bool) {
 	if l.length == 0 {
 		var value T
