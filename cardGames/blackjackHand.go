@@ -1,19 +1,5 @@
 package cardGames
 
-func scoreCardBlackjack(c Card) (int, int) {
-	if isFace(c) {
-		return 10, 10
-	}
-
-	hard := int(c.rank)
-	soft := hard
-	if c.rank == Ace {
-		soft += 10
-	}
-
-	return hard, soft
-}
-
 type BlackjackHand struct {
 	hand      *Hand
 	softScore int
