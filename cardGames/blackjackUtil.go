@@ -2,21 +2,25 @@ package cardGames
 
 import (
 	"fmt"
-	"strconv"
+	"practice/scan"
 	"strings"
 )
 
-func scanMinInt(prompt string, min int) int {
-	for {
-		fmt.Print(prompt)
-		var response string
-		fmt.Scanln(&response)
-		toInt, err := strconv.Atoi(response)
+const blackjackMaxBalance int = 10000000000
 
-		if err == nil && toInt >= min {
-			return toInt
-		}
-		fmt.Print("Invalid number. ")
+func scanCPULevel() cpu {
+	cpuLevels := []string{
+		"1. Basic",
+		"2. Advanced",
+	}
+	prompt := fmt.Sprintf("%s\nCPU level?: ", strings.Join(cpuLevels, "\n"))
+	switch scan.ScanInt(prompt, 1, len(cpuLevels)) {
+	case 1:
+		return BasicBlackjackCPU{}
+	case 2:
+		return BasicBlackjackCPU{} // TODO: Change this to advanced CPU
+	default:
+		panic("Invalid CPU level")
 	}
 }
 
@@ -25,26 +29,52 @@ func scanPlayer(playerType PlayerType, playerNumber int) *Player {
 	var name string
 	fmt.Scanln(&name)
 	name = strings.TrimSpace(name)
-	balance := scanMinInt(fmt.Sprintf("%s starting balance?: ", name), 1)
-	return NewPlayer(playerType, name, balance)
+	balance := scan.ScanInt(fmt.Sprintf("%s starting balance?: ", name), 1, blackjackMaxBalance)
+
+	var playerCPU cpu
+	if playerType == PlayerTypeCPU {
+		playerCPU = scanCPULevel()
+	}
+
+	return NewPlayer(playerType, name, balance, playerCPU)
 }
 
 func newBlackjackFromInput() Blackjack {
-	humanCount := scanMinInt("Number of human players?: ", 1)
-	humans := make([]*Player, humanCount)
-	for i := range humans {
-		humans[i] = scanPlayer(Human, i+1)
+	players := make([]*Player, 0)
+
+	for len(players) == 0 {
+		humans := scan.ScanInt("Number of human players?: ", 0, 3)
+		for i := 0; i < humans; i++ {
+			players = append(players, scanPlayer(PlayerTypeHuman, i+1))
+		}
+
+		cpus := scan.ScanInt("Number of CPU players?: ", 0, 3)
+		for i := 0; i < cpus; i++ {
+			players = append(players, scanPlayer(PlayerTypeCPU, i+1))
+		}
+
+		if len(players) == 0 {
+			fmt.Println("Must have at least 1 player.")
+		}
 	}
 
-	cpuCount := scanMinInt("Number of CPU players?: ", 0)
-	cpus := make([]*Player, cpuCount)
-	for i := range cpus {
-		cpus[i] = scanPlayer(CPU, i+1)
+	minBet := scan.ScanInt("Minimum bet?: ", 1, blackjackMaxBalance)
+
+	return NewBlackjack(players, minBet)
+}
+
+func scoreCardBlackjack(c Card) (int, int) {
+	if isFace(c) {
+		return 10, 10
 	}
 
-	minBet := scanMinInt("Minimum bet?: ", 1)
+	hard := int(c.rank)
+	soft := hard
+	if c.rank == Ace {
+		soft += 10
+	}
 
-	return NewBlackjack(humans, cpus, minBet)
+	return hard, soft
 }
 
 func isBlackjack(h BlackjackHand) bool {
@@ -58,13 +88,16 @@ func finalScore(h BlackjackHand) int {
 	return h.hardScore
 }
 
+func upCard(h BlackjackHand) Card {
+	for _, c := range h.hand.cards.Slice() {
+		if c.faceUp {
+			return c
+		}
+	}
+	return Card{}
+}
+
 func PlayBlackjack() {
 	b := newBlackjackFromInput()
-	for b.players.Len() > 0 {
-		b.round()
-		for _, p := range b.players.Slice() {
-			p.hand.Reset()
-		}
-		b.dealer.hand.Reset()
-	}
+	b.Play()
 }
